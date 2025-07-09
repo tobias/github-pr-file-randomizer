@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "GitHub PR File Randomizer",
+  "version": "1.0",
+  "description": "Randomly sorts files on GitHub PR pages",
+  
+  "permissions": [
+    "https://github.com/*"
+  ],
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*/pull/*/files"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
