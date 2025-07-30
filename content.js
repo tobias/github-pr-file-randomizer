@@ -30,15 +30,41 @@ function randomizeFiles() {
 }
 
 function waitForFiles() {
-  const observer = new MutationObserver((mutations) => {
-    const hasFiles = document.querySelector('[data-testid="file-tree"]') || 
-                    document.querySelector('.js-diff-progressive-container') ||
-                    document.querySelector('#files');
+  let debounceTimer;
+  let lastFileCount = 0;
+  let hasRandomized = false;
+  
+  const checkAndRandomize = () => {
+    const fileListContainer = document.querySelector('[data-testid="file-tree"]') || 
+                             document.querySelector('.js-diff-progressive-container') ||
+                             document.querySelector('#files');
     
-    if (hasFiles) {
+    if (!fileListContainer) return false;
+    
+    const fileElements = Array.from(fileListContainer.children).filter(child => {
+      return child.classList.contains('file') || 
+             child.classList.contains('js-file') ||
+             child.hasAttribute('data-file-path') ||
+             child.querySelector('[data-file-path]');
+    });
+    
+    if (fileElements.length > 0 && fileElements.length === lastFileCount) {
       randomizeFiles();
-      observer.disconnect();
+      hasRandomized = true;
+      return true;
     }
+    
+    lastFileCount = fileElements.length;
+    return false;
+  };
+  
+  const observer = new MutationObserver((mutations) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (checkAndRandomize()) {
+        observer.disconnect();
+      }
+    }, 300);
   });
 
   observer.observe(document.body, {
@@ -48,8 +74,10 @@ function waitForFiles() {
 
   setTimeout(() => {
     observer.disconnect();
-    randomizeFiles();
-  }, 5000);
+    if (!hasRandomized) {
+      randomizeFiles();
+    }
+  }, 10000);
 }
 
 if (document.readyState === 'loading') {
